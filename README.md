@@ -14,7 +14,7 @@ Basic bash tools like curl and mv and stuff
 
 ## How to install?
 
-pip install SWTK
+just download SWTK.py and run it with python
 
 ## How to use?
 
