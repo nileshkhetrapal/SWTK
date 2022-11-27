@@ -3,7 +3,7 @@ import os
 import sys
 setup(
     name='SWTK',
-    version='1.4.5',
+    version='1.4.6',
     description='Sort txt file from weirdest line to last. Meant to be used for Logs.An experimental Unsupervised Learning Log Anomaly Detection toolkit. YOU ARE BEAUTIFUL! This will sort the input based on weirdness',
     url='https://github.com/nileshkhetrapal/SWTK',
     author='Nilesh Khetrapal',
@@ -35,7 +35,7 @@ else:
         print("Trie is not present. Downloading and Compiling it from the repository... This only needs to be done once.")
         if not os.path.isfile(TriePath):
             # Download the rust program from the repository to the tmp directory and compile it
-            os.system("curl -L https://github.com/Redempt/anomaly_analysis/releases/download/Linux/trie -o /usr/bin/trie")
+            os.system("sudo wget https://github.com/Redempt/anomaly_analysis/releases/download/Linux/trie -O /usr/bin/trie")
             # Make the rust program executable
-            os.system("chmod +x /usr/bin/trie")
+            os.system("sudo chmod +x /usr/bin/trie")
             print("Done.")
