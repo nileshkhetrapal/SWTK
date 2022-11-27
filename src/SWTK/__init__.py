@@ -62,23 +62,11 @@ def main():
             TriePath = '/usr/bin/trie'
             # Check if the rust program is accessible
             if not os.path.isfile(TriePath):
-                print(
-                    "Trie is not present. Downloading it from the repository... This only needs to be done once.")
-                os.system(
-                    "git clone https://github.com/Redempt/anomaly_analysis.git")
-                # Print("Sauce was downloaded successfully.")
-                # Compile the rust program using cargo and name it Trie and place it in the bin directory
-                os.system("cd anomaly_analysis && cargo build")
-                print("Trie was compiled successfully.")
-                # Move the rust program to the bin directory
-                os.system("sudo mv target/debug/Trie /usr/bin/trie")
-                #make sure the rust program is executable
+                # Download the rust program from the repository to the tmp directory and compile it
+                os.system("sudo wget https://github.com/Redempt/anomaly_analysis/releases/download/Linux/trie -O /usr/bin/trie")
+                # Make the rust program executable
                 os.system("sudo chmod +x /usr/bin/trie")
-                print("Trie was moved to the bin directory successfully.")
-                #Move out of the anomaly_analysis directory
-                os.system("cd ../")
-                # Remove the anomaly_analysis directory
-                os.system("rm -rf anomaly_analysis")
+                print("Done.")
         # Create a variable to store the the flags
         flags = "-a "
         # Check if the user wants to save the model
