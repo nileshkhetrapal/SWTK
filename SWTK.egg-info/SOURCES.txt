@@ -1,0 +1,8 @@
+LICENSE
+README.md
+setup.py
+SWTK.egg-info/PKG-INFO
+SWTK.egg-info/SOURCES.txt
+SWTK.egg-info/dependency_links.txt
+SWTK.egg-info/top_level.txt
+bin/SWTK
