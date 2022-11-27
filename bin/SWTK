@@ -59,7 +59,7 @@ def main():
         else:
             # TriePath has the location of the rust program
             #TriePath should point to the rust program in the usr/bin directory
-            TriePath = '/usr/bin/Trie'
+            TriePath = '/usr/bin/trie'
             # Check if the rust program is accessible
             if not os.path.isfile(TriePath):
                 print(
@@ -71,7 +71,9 @@ def main():
                 os.system("cd anomaly_analysis && cargo build")
                 print("Trie was compiled successfully.")
                 # Move the rust program to the bin directory
-                os.system("sudo mv /target/debug/Trie /usr/bin/")
+                os.system("sudo mv target/debug/Trie /usr/bin/trie")
+                #make sure the rust program is executable
+                os.system("sudo chmod +x /usr/bin/trie")
                 print("Trie was moved to the bin directory successfully.")
                 #Move out of the anomaly_analysis directory
                 os.system("cd ../")
@@ -233,17 +235,17 @@ SWTK -i input.txt -n 10 -o output.txt -m input.model -s new.model -v yes'''
     # print(anomaly_scores)
     # Create a new Dictionary where the key is the Line from the input file and the value is the anomaly score
     anomaly_dict = {lines[i]: anomaly_scores[i] for i in range(len(lines))}
-    print("This is the anomaly dict")
-    print(anomaly_dict)
+    #print("This is the anomaly dict")
+    #print(anomaly_dict)
     # Sort the dictionary based on the anomaly score
-    sorted_anomaly_dict = dict(
-        sorted(anomaly_dict.items(), key=lambda item: item[0]))
+    #Sort the dictionary based on values
+    anomaly_dict = dict(sorted(anomaly_dict.items(), key=lambda item: item[1]))
+    sorted_anomaly_dict = anomaly_dict
     keys = []
     values = []
     # Print all the lines and their values
     for key, value in sorted_anomaly_dict.items():
         # Add the value key to a list named values
-
         values.append(value)
         # Add the key to a list named keys
 
@@ -264,13 +266,12 @@ SWTK -i input.txt -n 10 -o output.txt -m input.model -s new.model -v yes'''
                 "The number of lines to print is greater than the number of lines in the input file.")
             exit()
         # Store the first n lines in a new dictionary
-        top_n_dict = {k: v for k, v in sorted_anomaly_dict.items() if k in list(
-            sorted_anomaly_dict.keys())[:top_n]}
+        top_n_dict = {k: v for k, v in sorted_anomaly_dict.items() if k in list(sorted_anomaly_dict.keys())[:top_n]}
         # Replace the sorted_anomaly_dict with the top_n_dict
         sorted_anomaly_dict = top_n_dict
         # print(sorted_anomaly_dict)
-        keys = []
-        values = []
+    keys = []
+    values = []
     # Print all the lines and their values
     for key, value in sorted_anomaly_dict.items():
         # Add the value key to a list named values
@@ -282,17 +283,20 @@ SWTK -i input.txt -n 10 -o output.txt -m input.model -s new.model -v yes'''
 
     # if -v is passed
     if args.values:
+        print("Printing the values of the anomalies")
         # Print the keys and Values in the Keys:Values format
         for i in range(len(keys)):
             print(keys[i] + ":" + str(values[i]))
     else:
         # Print all the lines from keys but skip empty lines
+        #print("Printing the lines")
         for key in keys:
             if key:
                 print(key)
 
     # Check if the user wants to save the output to a file and has the values flag
     if args.output and args.values:
+        print("Saving the output to " + args.output)
         # Open the output file in write mode
         with open(args.output, "w") as f:
             # Write the keys and values to the file
@@ -300,6 +304,7 @@ SWTK -i input.txt -n 10 -o output.txt -m input.model -s new.model -v yes'''
                 f.write(keys[i] + ":" + str(values[i]) + "\n")
         print("Output file created.")
     if args.output and not args.values:
+        print("Saving the output to " + args.output)
         # Open the output file and write the lines to it
         with open(args.output, 'w') as f:
             for key in keys:
