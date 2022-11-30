@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 '''
-The goal of this script is to identify the weird lines of the input file.
-It will utilize a rust program to find the weird lines of the input file. For windows, it must be downloaded from the repository and placed in the temp directory. For linux and mac, it must be downloaded, compiled and placed in the temp directory.
+The goal of this script is to sort a text file from weirdest line to last
+It will utilize a rust program to find the weird lines of the input file. For windows, it must be downloaded from the repository and placed in the temp directory. 
+For linux and mac, it must be downloaded, compiled and placed in the ~/.local/bin/trie directory.
 The script must check at runtime if the rust program is accessible or not.
 The script will then assign an anomaly score to each line and sort the lines by the anomaly score.
 The user can get the top N lines by specifying the -n flag. 
@@ -34,13 +35,14 @@ def main():
 
     def prepare_input(input):
         # Get username
-        username = os.getlogin()
+        
         # Get all the user arguments
         global args
         # Get the TriePath
         # Check if the rust program is accessible
         # Figure out if the host is windows, linux or mac
         if sys.platform == 'win32':
+            username = os.getlogin()
             TriePath = 'C:\\Users\\' + username + '\\AppData\\Local\\Temp\\Trie.exe'
             # Check if anomaly_detection.exe is in the temp directory
             # If anomaly_detection.exe is not in the temp directory, download it from the repository,compile it and place it in the temp directory
@@ -57,16 +59,25 @@ def main():
         # If the host is linux or mac, check if the rust program is accessible
 
         else:
+            homedir = os.getenv("HOME")
             # TriePath has the location of the rust program
-            #TriePath should point to the rust program in the usr/bin directory
-            TriePath = '/usr/bin/trie'
+            #Create a string with the path to the rust program
+            Trie = str("/.local/bin/trie")
+            TriePath = homedir + Trie
             # Check if the rust program is accessible
             if not os.path.isfile(TriePath):
-                # Download the rust program from the repository to the tmp directory and compile it
-                os.system("sudo wget https://github.com/Redempt/anomaly_analysis/releases/download/Linux/trie -O /usr/bin/trie")
-                # Make the rust program executable
-                os.system("sudo chmod +x /usr/bin/trie")
-                print("Done.")
+                if not os.path.isfile("/usr/bin/cargo"):
+                    os.system("sudo apt install cargo")
+                    print("Cargo was installed successfully.")
+                # Download the rust program from the repository
+                print("Trie is not in the /home/nilesh/bin/trie directory. Downloading it from the repository...")
+                os.system("git clone https://github.com/Redempt/anomaly_analysis && cd anomaly_analysis && cargo build --release && mv target/release/trie /home/nilesh/.local/bin/trie")
+                #Check if the rust program is accessible
+                if not os.path.isfile(TriePath):
+                    print(TriePath)
+                    #If the rust program is not accessible, exit the program
+                    print("Trie is not accessible. Please check if the rust program is accessible.")
+                    exit()
         # Create a variable to store the the flags
         flags = "-a "
         # Check if the user wants to save the model
@@ -136,11 +147,11 @@ def main():
         # Get the username
         username = os.getlogin()
     example_text = '''Example:
-SWTK input.txt
 SWTK -i input.txt -n 10
+SWTK -i input.txt -n 10 -v yes
 SWTK -i input.txt -n 10 -o output.txt
-SWTK -i input.txt -n 10 -o output.txt -s  #Default model name is input.model
-SWTK -i input.txt -n 10 -o output.txt -m input.model #Use the saved model
+SWTK -i input.txt -n 10 -o output.txt -s saved1.model
+SWTK -i input.txt -n 10 -o output.txt -m saved1.model #Use the saved model
 #Use the saved model and update the model
 SWTK -i input.txt -n 10 -o output.txt -m input.model -s input.model
 #Use the saved model and create a new model
@@ -149,7 +160,7 @@ SWTK -i input.txt -n 10 -o output.txt -m input.model -s new.model
 SWTK -i input.txt -n 10 -o output.txt -m input.model -s new.model -v yes'''
     # Setup the argument parser
     parser = argparse.ArgumentParser(
-        description="The goal of this script is to identify the weird lines of the input file. This is made with love by Nilesh Khetrapal. Protip: YOU ARE BEAUTIFUL!",
+        description="Sort lines from weirdest to normal(est). This is made with love by Nilesh Khetrapal. Protip: YOU ARE BEAUTIFUL!",
         epilog=example_text,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
