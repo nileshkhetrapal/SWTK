@@ -3,7 +3,7 @@ import os
 import sys
 setup(
     name='SWTK',
-    version='1.4.6',
+    version='1.4.7',
     description='Sort txt file from weirdest line to last. Meant to be used for Logs.An experimental Unsupervised Learning Log Anomaly Detection toolkit. YOU ARE BEAUTIFUL! This will sort the input based on weirdness',
     url='https://github.com/nileshkhetrapal/SWTK',
     author='Nilesh Khetrapal',
@@ -12,6 +12,8 @@ setup(
 )
 
 if sys.platform == 'win32':
+    #Get username
+    username = os.getlogin()
     TriePath = 'C:\\Users\\' + username + '\\AppData\\Local\\Temp\\Trie.exe'
     # Check if anomaly_detection.exe is in the temp directory
     # If anomaly_detection.exe is not in the temp directory, download it from the repository,compile it and place it in the temp directory
@@ -25,17 +27,45 @@ if sys.platform == 'win32':
 # If the host is linux or mac, check if the rust program is accessible
 
 else:
+    #Get the username
+    #use popen to get the username
+    username = os.popen("whoami").read()
+    homedir = os.getenv("HOME")
     # TriePath has the location of the rust program
+    #Create a string with the path to the rust program
+    Trie = str("/.local/bin/trie")
+    TriePath = homedir + Trie
     #TriePath should point to the rust program in the usr/bin directory
-    TriePath = '/usr/bin/trie'
+    #TriePath = '/home/' + username + '/.local/bin/trie'
     # Check if the rust program is accessible
     if not os.path.isfile(TriePath):
         #move the trie program to the usr/bin directory
-        os.system("sudo mv trie /usr/bin/trie")
         print("Trie is not present. Downloading and Compiling it from the repository... This only needs to be done once.")
+        
+        #if not os.path.isfile(TriePath):
+        if not os.path.isfile("/usr/bin/cargo"):
+            os.system("sudo apt install cargo")
+            print("Cargo was installed successfully.")
+           
+            if not os.path.isdir("~/.local/bin"):
+                #check if we have permission to create the directory
+                if not os.path.isdir("/usr/bin"):
+                    print("You do not have permission to create the directory ~/.local/bin. Please create the directory and try again.")
+                    exit()
+                os.system("mkdir ~/.local/bin")
+                print("The directory ~/.local/bin was created successfully.")
+        
+            # Download the rust program from the repository
+        print("Trie is not in the /home/nilesh/bin/trie directory. Downloading it from the repository...")
+        os.system("git clone https://github.com/Redempt/anomaly_analysis && cd anomaly_analysis && cargo build --release && mv target/release/trie /home/nilesh/.local/bin/trie")
+        #Check if the rust program is accessible
         if not os.path.isfile(TriePath):
-            # Download the rust program from the repository to the tmp directory and compile it
-            os.system("sudo wget https://github.com/Redempt/anomaly_analysis/releases/download/Linux/trie -O /usr/bin/trie")
-            # Make the rust program executable
-            os.system("sudo chmod +x /usr/bin/trie")
-            print("Done.")
+            print(TriePath)
+            #If the rust program is not accessible, exit the program
+            print("Trie is not accessible. Please check if the rust program is accessible.")
+            exit()
+            
+           
+        os.system("rm -rf anomaly_analysis")
+            
+        print("Done.")
