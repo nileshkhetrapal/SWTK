@@ -13,7 +13,7 @@ The user can specify the model name by using the -m flag if they choose to use a
 This script is supposed to be a pip installable package.
 
 example_text = Example:
-SWTK input.txt
+SWTK -i input.txt
 SWTK -i input.txt -n 10
 SWTK -i input.txt -n 10 -o output.txt
 SWTK -i input.txt -n 10 -o output.txt -s  #Default model name is input.model
@@ -45,39 +45,14 @@ def main():
             username = os.getlogin()
             TriePath = 'C:\\Users\\' + username + '\\AppData\\Local\\Temp\\Trie.exe'
             # Check if anomaly_detection.exe is in the temp directory
-            # If anomaly_detection.exe is not in the temp directory, download it from the repository,compile it and place it in the temp directory
-            if not os.path.isfile("C:\\Users\\" + username + "\\AppData\\Local\\Temp\\Trie.exe"):
-                print(
-                    "Trie.exe is not in the temp directory. Downloading it from the repository...")
-                os.system(
-                    "curl -L https://github.com/Redempt/anomaly_analysis/releases/download/Dev_Only/anomaly_detection.exe -o Trie.exe")
-                print("Trie.exe was downloaded successfully.")
-                print("Moving Trie.exe to the temp directory...")
-                os.system("move Trie.exe C:\\Users\\" + username +
-                        "\\AppData\\Local\\Temp\\Trie.exe")
-                print("Done.")
         # If the host is linux or mac, check if the rust program is accessible
 
         else:
             homedir = os.getenv("HOME")
             # TriePath has the location of the rust program
             #Create a string with the path to the rust program
-            Trie = str("/.local/bin/trie")
-            TriePath = homedir + Trie
-            # Check if the rust program is accessible
-            if not os.path.isfile(TriePath):
-                if not os.path.isfile("/usr/bin/cargo"):
-                    os.system("sudo apt install cargo")
-                    print("Cargo was installed successfully.")
-                # Download the rust program from the repository
-                print("Trie is not in the /home/nilesh/bin/trie directory. Downloading it from the repository...")
-                os.system("git clone https://github.com/Redempt/anomaly_analysis && cd anomaly_analysis && cargo build --release && mv target/release/trie /home/nilesh/.local/bin/trie")
-                #Check if the rust program is accessible
-                if not os.path.isfile(TriePath):
-                    print(TriePath)
-                    #If the rust program is not accessible, exit the program
-                    print("Trie is not accessible. Please check if the rust program is accessible.")
-                    exit()
+            #Trie = str("/.local/bin/trie")
+            TriePath = "/bin/trie"
         # Create a variable to store the the flags
         flags = "-a "
         # Check if the user wants to save the model
