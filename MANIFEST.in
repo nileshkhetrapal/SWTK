@@ -1,0 +1,12 @@
+include setup.py
+include README.md
+include LICENSE
+incldue src/SWTK/__init__.py
+include SWTK.egg-info/PKG-INFO
+include SWTK.egg-info/SOURCES.txt
+include SWTK.egg-info/dependency_links.txt
+include SWTK.egg-info/top_level.txt
+include bin/SWTK
+include bin/trie
+include Temp/trie.exe
+
