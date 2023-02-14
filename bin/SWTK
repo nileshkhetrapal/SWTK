@@ -1,4 +1,4 @@
-
+#!bin/env python3
 '''
 The goal of this script is to sort a text file from weirdest line to last
 It will utilize a rust program to find the weird lines of the input file. For windows, it must be downloaded from the repository and placed in the temp directory. 
