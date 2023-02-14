@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 '''
 The goal of this script is to sort a text file from weirdest line to last
 It will utilize a rust program to find the weird lines of the input file. For windows, it must be downloaded from the repository and placed in the temp directory. 
@@ -30,6 +30,93 @@ SWTK -i input.txt -n 10 -o output.txt -m input.model -s new.model -v yes
 import argparse
 import os
 import sys
+import requests
+import json
+import time
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+ENDPOINT = "https://adamransomwaredetection.cognitiveservices.azure.com/"
+prediction_key = "d0308db932914e2eb5d37410976a019b"
+prediction_resource_id = "https://adamransomwaredetection-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/4d3b1920-50ab-4839-bac9-be1f1d68b5e3/classify/iterations/Iteration1/image"
+
+def def_spectrogram(filepath, directory):
+    start_time = time.time()
+    #if directory doesnt exist, create it
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    # Open the binary file and read its content into a bytearray
+    with open(filepath, "rb") as f:
+        #read the file
+        binary_content = bytearray(f.read())
+    # Convert the binary content into a time-domain signal
+    signal = np.array(binary_content, dtype=float)
+    
+    # Check if the process has taken longer than 30 seconds
+    elapsed_time = time.time() - start_time
+    if elapsed_time > 30:
+        print(f"Skipping file {filepath} as the process took longer than 30 seconds")
+        return
+    # Create the spectrogram visualization
+    plt.specgram(signal, NFFT=1024, Fs=44100)
+    # Place the labels
+    # Place the title with the filename
+    filename = os.path.basename(filepath)
+    #put the gradient legend
+    #Convert the plot to an image
+    #Create the savefile path
+    savefile = os.path.join(directory, filename + ".png")
+    plt.savefig(savefile)
+    # Save the plot as a png file
+    plt.close()
+    return savefile
+
+# Function to send the spectrogram to the API and receive the prediction
+def predict(filepath):
+    # Add code to send the spectrogram to the API
+    #print("Sending request to API...")
+    #print("Filepath: " + filepath)
+    # Replace the URL below with the actual API URL
+    url = "https://adamransomwaredetection-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/4d3b1920-50ab-4839-bac9-be1f1d68b5e3/classify/iterations/Iteration1/image"
+    headers = {
+        "Prediction-Key": "d0308db932914e2eb5d37410976a019b",
+        "Content-Type": "application/octet-stream"
+    }
+    image = open(filepath, "rb").read()
+    # Send the request and get the response
+    response = requests.post(url, headers=headers, data=image)
+    # Convert the response to JSON
+    response = json.loads(response.text)
+    #This is the format of the response:
+    # {'id': '03902057-4c85-460f-a608-faecfe4b5088', 'project': '4d3b1920-50ab-4839-bac9-be1f1d68b5e3', 'iteration': '5a1d2c42-6a82-44c5-83db-fee47a5eb786', 'created': '2023-02-13T00:10:48.984Z', 'predictions': [{'probability': 0.99554056, 'tagId': '9b97db47-c6b1-4702-a4f9-f173fec8600e', 'tagName': 'Benign'}, {'probability': 0.004459459, 'tagId': '1bc35583-aa73-44b7-a173-5bb4370bb273', 'tagName': 'Malign'}]}
+    # Get the prediction with the highest probability
+    prediction = max(response["predictions"], key=lambda x: x["probability"])
+    probability = prediction["probability"]
+    
+    #print(f"Prediction: {prediction['tagName']}, Probability: {probability}")
+    return prediction["tagName"], probability
+
+def _10dma(Mal_file):
+
+    #This function will return a value that will be returned from the predict function
+    #This value will be used to determine if the file is malicious or not
+
+    #This function will take in a file and return a value that will be used to determine if the file is malicious or not
+
+    #Use a .spectrograms folder to store the spectrograms
+    directory = ".spectrograms"
+    if not os.path.exists(directory):
+            os.makedirs(directory)
+    #Create a spectrogram of the file
+    spectrogram = def_spectrogram(Mal_file, directory)
+    #Send the spectrogram to the API
+    prediction, probability = predict(spectrogram)
+    #Return the prediction and probability
+    return prediction, probability
+    
+
+
 def main():
     global args
 
@@ -44,6 +131,24 @@ def main():
         if sys.platform == 'win32':
             username = os.getlogin()
             TriePath = 'C:\\Users\\' + username + '\\AppData\\Local\\Temp\\Trie.exe'
+            #Check if Trie.exe is in the temp directory
+            if os.path.exists(TriePath):
+                #print("Trie.exe is in the temp directory")
+            else:
+                print("Trie.exe is not in the temp directory")
+                #Download the Trie.exe file from github
+                # https://github.com/Redempt/anomaly_analysis/releases/download/Dev_Only/Trie.exe
+                # Download the Trie.exe file from github and store it the TriePath
+                os.system("curl -L https://github.com/Redempt/anomaly_analysis/releases/download/Dev_Only/Trie.exe -o " + TriePath + " -k")
+                # Check if the file was downloaded
+                if os.path.exists(TriePath):
+                    print("Trie.exe was downloaded successfully")
+                else:
+                    print("Trie.exe was not downloaded successfully")
+                    # Exit the program
+                    sys.exit()
+                
+
             # Check if anomaly_detection.exe is in the temp directory
         # If the host is linux or mac, check if the rust program is accessible
 
@@ -52,7 +157,33 @@ def main():
             # TriePath has the location of the rust program
             #Create a string with the path to the rust program
             #Trie = str("/.local/bin/trie")
-            TriePath = "/bin/trie"
+            TriePath = "/tmp/trie"
+            #Check if the rust program is in the bin directory
+            if os.path.exists(TriePath):
+                #print("Trie is in the tmp directory")
+            else:
+                print("Trie is not in the tmp directory")
+                #Download the Trie file from github
+                #https://github.com/Redempt/anomaly_analysis/releases/download/Linux/trie
+                #Download the Trie file from github and store it in the TriePath
+                os.system("curl -L https://github.com/Redempt/anomaly_analysis/releases/download/Linux/trie -o " + TriePath + " -k")
+                #Make it have the correct permissions
+                os.system("chmod 777 " + TriePath)
+                #Check if the file was downloaded
+                if os.path.exists(TriePath):
+                    print("Trie was downloaded successfully")
+                    #Make sure the fie runs on this machine
+                    #Try running the program, it should return an error saying that the program cannot find the input file
+                    try :
+                        os.system(TriePath + " " + input)
+                    except:
+                        print("This version of trie is not compatible with this machine, you need to download the trie model and compile it yourself")
+                        #Exit the program
+                        sys.exit()
+                else:
+                    print("Trie was not downloaded successfully")
+                    #Exit the program
+                    sys.exit()
         # Create a variable to store the the flags
         flags = "-a "
         # Check if the user wants to save the model
@@ -152,6 +283,10 @@ SWTK -i input.txt -n 10 -o output.txt -m input.model -s new.model -v yes'''
     # Add another parser argument to specify if the users wants to see the Values through -v
     parser.add_argument(
         "-v", "--values", help="Show the values of the anomalies. type yes after -v to see the values", default=False)
+    # Add another parser argument to specify if the users wants to find if a file is malicious or not
+    parser.add_argument(
+        "-_10dma", "--_10dma", help="Find if a file is malicious or not. type yes after -10dma to find if a file is malicious or not", default=False)
+    # Parse the arguments
     args = parser.parse_args()
     # Get the raw arguments passed to the script and store them in a variable
     raw_args = sys.argv
@@ -175,116 +310,127 @@ SWTK -i input.txt -n 10 -o output.txt -m input.model -s new.model -v yes'''
         print("Input file is empty.")
         exit()
 
-    # Read the input file on a line by line basis and store in a list
-    with open(args.input, 'r') as f:
-        lines = f.readlines()
-    # Create a dictionary to store the lines and their anomaly score
-    anomaly_dict = {}
-    # Put the lines in the dictionary
-    for line in lines:
-        anomaly_dict[line] = 0
-    # Get the Trie Output
-    TrieOutput = prepare_input(InputFilePath)
-    # pRINT THE Trie output
-    # print("This is the Trie output")
-    # print(TrieOutput)
-    # print("This is the Trie output")
-    # The TrieOutput looks like this:
-    ''' 1: 6.2894735
-        2: 18.783783
-        3: 18.783783
-        4: 18.783783
-        5: 18.783783
-        6: 16.893618
-    '''
-    # Where the first number is the line number and the second number is the anomaly score
-    # X: Y
-    # Get all the Y values and store them in a list
-    anomaly_scores = []
-    for line in TrieOutput.split('\n'):
-        if line:
-            anomaly_scores.append(float(line.split(':')[1]))
+    #If the user has passed the -_10dma flag dont run the Trie program
+    if not args._10dma:
+        
+        # Read the input file on a line by line basis and store in a list
+        with open(args.input, 'r') as f:
+            lines = f.readlines()
+        # Create a dictionary to store the lines and their anomaly score
+        anomaly_dict = {}
+        # Put the lines in the dictionary
+        for line in lines:
+            anomaly_dict[line] = 0
+        # Get the Trie Output
+        TrieOutput = prepare_input(InputFilePath)
+        # pRINT THE Trie output
+        # print("This is the Trie output")
+        # print(TrieOutput)
+        # print("This is the Trie output")
+        # The TrieOutput looks like this:
+        ''' 1: 6.2894735
+            2: 18.783783
+            3: 18.783783
+            4: 18.783783
+            5: 18.783783
+            6: 16.893618
+        '''
+        # Where the first number is the line number and the second number is the anomaly score
+        # X: Y
+        # Get all the Y values and store them in a list
+        anomaly_scores = []
+        for line in TrieOutput.split('\n'):
+            if line:
+                anomaly_scores.append(float(line.split(':')[1]))
 
-    # print("This is the anomaly scores")
-    # print(anomaly_scores)
-    # Create a new Dictionary where the key is the Line from the input file and the value is the anomaly score
-    anomaly_dict = {lines[i]: anomaly_scores[i] for i in range(len(lines))}
-    #print("This is the anomaly dict")
-    #print(anomaly_dict)
-    # Sort the dictionary based on the anomaly score
-    #Sort the dictionary based on values
-    anomaly_dict = dict(sorted(anomaly_dict.items(), key=lambda item: item[1]))
-    sorted_anomaly_dict = anomaly_dict
-    keys = []
-    values = []
-    # Print all the lines and their values
-    for key, value in sorted_anomaly_dict.items():
-        # Add the value key to a list named values
-        values.append(value)
-        # Add the key to a list named keys
+        # print("This is the anomaly scores")
+        # print(anomaly_scores)
+        # Create a new Dictionary where the key is the Line from the input file and the value is the anomaly score
+        anomaly_dict = {lines[i]: anomaly_scores[i] for i in range(len(lines))}
+        #print("This is the anomaly dict")
+        #print(anomaly_dict)
+        # Sort the dictionary based on the anomaly score
+        #Sort the dictionary based on values
+        anomaly_dict = dict(sorted(anomaly_dict.items(), key=lambda item: item[1]))
+        sorted_anomaly_dict = anomaly_dict
+        keys = []
+        values = []
+        # Print all the lines and their values
+        for key, value in sorted_anomaly_dict.items():
+            # Add the value key to a list named values
+            values.append(value)
+            # Add the key to a list named keys
 
-        keys.append(key)
+            keys.append(key)
 
-    # If the -n flag is given with an integer n, store the first n lines from sorted_anomaly_dict in a new dictionary called top_n_dict
-    if args.top:
-        print("Printing the top " + args.top + " lines")
-        # Convert the string to an integer
-        top_n = int(args.top)
-        # If the integer is less than 0, print an error message and exit
-        if top_n < 0:
-            print("The number of lines to print must be a positive integer.")
-            exit()
-        # If the integer is greater than the number of lines in the input file, print an error message and exit
-        if top_n > len(lines):
-            print(
-                "The number of lines to print is greater than the number of lines in the input file.")
-            exit()
-        # Store the first n lines in a new dictionary
-        top_n_dict = {k: v for k, v in sorted_anomaly_dict.items() if k in list(sorted_anomaly_dict.keys())[:top_n]}
-        # Replace the sorted_anomaly_dict with the top_n_dict
-        sorted_anomaly_dict = top_n_dict
-        # print(sorted_anomaly_dict)
-    keys = []
-    values = []
-    # Print all the lines and their values
-    for key, value in sorted_anomaly_dict.items():
-        # Add the value key to a list named values
+        # If the -n flag is given with an integer n, store the first n lines from sorted_anomaly_dict in a new dictionary called top_n_dict
+        if args.top:
+            print("Printing the top " + args.top + " lines")
+            # Convert the string to an integer
+            top_n = int(args.top)
+            # If the integer is less than 0, print an error message and exit
+            if top_n < 0:
+                print("The number of lines to print must be a positive integer.")
+                exit()
+            # If the integer is greater than the number of lines in the input file, print an error message and exit
+            if top_n > len(lines):
+                print(
+                    "The number of lines to print is greater than the number of lines in the input file.")
+                exit()
+            # Store the first n lines in a new dictionary
+            top_n_dict = {k: v for k, v in sorted_anomaly_dict.items() if k in list(sorted_anomaly_dict.keys())[:top_n]}
+            # Replace the sorted_anomaly_dict with the top_n_dict
+            sorted_anomaly_dict = top_n_dict
+            # print(sorted_anomaly_dict)
+            keys = []
+            values = []
+            # Print all the lines and their values
+            for key, value in sorted_anomaly_dict.items():
+                # Add the value key to a list named values
 
-        values.append(value)
-        # Add the key to a list named keys
+                values.append(value)
+                # Add the key to a list named keys
 
-        keys.append(key)
-
-    # if -v is passed
-    if args.values:
-        print("Printing the values of the anomalies")
-        # Print the keys and Values in the Keys:Values format
-        for i in range(len(keys)):
-            print(keys[i] + ":" + str(values[i]))
-    else:
-        # Print all the lines from keys but skip empty lines
-        #print("Printing the lines")
-        for key in keys:
-            if key:
-                print(key)
-
-    # Check if the user wants to save the output to a file and has the values flag
-    if args.output and args.values:
-        print("Saving the output to " + args.output)
-        # Open the output file in write mode
-        with open(args.output, "w") as f:
-            # Write the keys and values to the file
+                keys.append(key)
+        #If the -10dma flag is given, print if the file is malicious or not
+    
+        if args.values:
+            print("Printing the values of the anomalies")
+            # Print the keys and Values in the Keys:Values format
             for i in range(len(keys)):
-                f.write(keys[i] + ":" + str(values[i]) + "\n")
-        print("Output file created.")
-    if args.output and not args.values:
-        print("Saving the output to " + args.output)
-        # Open the output file and write the lines to it
-        with open(args.output, 'w') as f:
+                print(keys[i] + ":" + str(values[i]))
+        else:
+            # Print all the lines from keys but skip empty lines
+            #print("Printing the lines")
             for key in keys:
                 if key:
-                    f.write(key)
-        print("Output file created.")
+                    print(key)
 
+        # Check if the user wants to save the output to a file and has the values flag
+        if args.output and args.values:
+            print("Saving the output to " + args.output)
+            # Open the output file in write mode
+            with open(args.output, "w") as f:
+                # Write the keys and values to the file
+                for i in range(len(keys)):
+                    f.write(keys[i] + ":" + str(values[i]) + "\n")
+            print("Output file created.")
+        if args.output and not args.values:
+            print("Saving the output to " + args.output)
+            # Open the output file and write the lines to it
+            with open(args.output, 'w') as f:
+                for key in keys:
+                    if key:
+                        f.write(key)
+            print("Output file created.")
+    if args._10dma:
+        #If -i is not given, print an error message and ask the user to give the input file
+        if not args.input:
+            print("Please give the input file.")
+            exit()
+        #print("Printing if the file is malicious or not")
+        prediction, probability = _10dma(args.input)
+        print("The file is " + prediction + " with a probability of " + str(probability))
+        
 
 main()
